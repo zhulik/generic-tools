@@ -3,6 +3,7 @@ package batcher
 import (
 	"time"
 
+	"github.com/zhulik/generic-tools/ch"
 	"github.com/zhulik/generic-tools/common"
 )
 
@@ -15,8 +16,8 @@ type Batcher[T any] interface {
 }
 
 type batcher[T any] struct {
-	input   chan T
-	output  chan []T
+	input   ch.Chan[T]
+	output  ch.Chan[[]T]
 	stopped chan bool
 	buffer  []T
 	current int
@@ -25,8 +26,8 @@ type batcher[T any] struct {
 
 func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 	batcher := &batcher[T]{
-		input:   make(chan T),
-		output:  make(chan []T),
+		input:   ch.New[T](),
+		output:  ch.New[[]T](),
 		stopped: make(chan bool),
 		buffer:  make([]T, sendThreshold),
 		current: 0,
@@ -39,26 +40,26 @@ func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 }
 
 func (b *batcher[T]) Close() {
-	close(b.input)
+	b.input.Close()
 	<-b.stopped
-	close(b.output)
+	b.output.Close()
 }
 
-func (b *batcher[T]) Receive() []T {
-	return <-b.output
+func (b *batcher[T]) Receive() ([]T, bool) {
+	return b.output.Receive()
 }
 
 func (b *batcher[T]) Subscribe() <-chan []T {
-	return b.output
+	return b.output.Subscribe()
 }
 
 func (b *batcher[T]) Send(msg T) {
-	b.input <- msg
+	b.input.Send(msg)
 }
 
 func (b *batcher[T]) SendBatch(msgs []T) {
 	for _, msg := range msgs {
-		b.input <- msg
+		b.Send(msg)
 	}
 }
 
@@ -67,7 +68,7 @@ func (b *batcher[T]) run() {
 
 	for {
 		select {
-		case msg, ok := <-b.input:
+		case msg, ok := <-b.input.Subscribe():
 			if !ok {
 				ticker.Stop()
 				b.flush()
@@ -94,6 +95,6 @@ func (b *batcher[T]) flush() { // TODO: make it public?
 	}
 	batch := make([]T, b.current)
 	copy(batch, b.buffer[0:b.current])
-	b.output <- batch
+	b.output.Send(batch)
 	b.current = 0
 }

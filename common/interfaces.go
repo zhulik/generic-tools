@@ -13,7 +13,7 @@ type BatchSender[T any] interface {
 }
 
 type Receiver[T any] interface {
-	Receive() T
+	Receive() (T, bool)
 }
 
 type Subscriber[T any] interface {

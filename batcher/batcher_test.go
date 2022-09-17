@@ -6,7 +6,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zhulik/generic-tools/batcher"
+	"github.com/zhulik/generic-tools/common"
 )
+
+func MustReceive[T any](r common.Receiver[T]) T {
+	v, ok := r.Receive()
+	if !ok {
+		panic("No ok!")
+	}
+	return v
+}
 
 func TestBatcher(t *testing.T) {
 	t.Parallel()
@@ -16,9 +25,9 @@ func TestBatcher(t *testing.T) {
 		done := make(chan bool)
 
 		go func() {
-			assert.Equal(t, []int{0, 1, 2, 3, 4}, batcher.Receive())
-			assert.Equal(t, []int{5, 6, 7, 8, 9}, batcher.Receive())
-			assert.Equal(t, []int{10, 11}, batcher.Receive())
+			assert.Equal(t, []int{0, 1, 2, 3, 4}, MustReceive[[]int](batcher))
+			assert.Equal(t, []int{5, 6, 7, 8, 9}, MustReceive[[]int](batcher))
+			assert.Equal(t, []int{10, 11}, MustReceive[[]int](batcher))
 			done <- true
 		}()
 
@@ -36,8 +45,8 @@ func TestBatcher(t *testing.T) {
 		done := make(chan bool)
 
 		go func() {
-			assert.Equal(t, []int{0, 1, 2}, batcher.Receive())
-			assert.Equal(t, []int{3, 4, 5}, batcher.Receive())
+			assert.Equal(t, []int{0, 1, 2}, MustReceive[[]int](batcher))
+			assert.Equal(t, []int{3, 4, 5}, MustReceive[[]int](batcher))
 			done <- true
 		}()
 
