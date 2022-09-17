@@ -13,9 +13,9 @@ type BatchSender[T any] interface {
 }
 
 type Receiver[T any] interface {
-	Receive() <-chan T
+	Receive() T
 }
 
-type BatchReceiver[T any] interface {
-	ReceiveBatch() <-chan []T
+type Subscriber[T any] interface {
+	Subscribe() <-chan T
 }

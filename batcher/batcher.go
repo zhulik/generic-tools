@@ -10,7 +10,8 @@ type Batcher[T any] interface {
 	common.Closer
 	common.Sender[T]
 	common.BatchSender[T]
-	common.BatchReceiver[T]
+	common.Receiver[[]T]
+	common.Subscriber[[]T]
 }
 
 type batcher[T any] struct {
@@ -41,7 +42,11 @@ func (b *batcher[T]) Close() {
 	close(b.output)
 }
 
-func (b *batcher[T]) ReceiveBatch() <-chan []T {
+func (b *batcher[T]) Receive() []T {
+	return <-b.output
+}
+
+func (b *batcher[T]) Subscribe() <-chan []T {
 	return b.output
 }
 
