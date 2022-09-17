@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	gt "github.com/zhulik/generic-tools"
 	"github.com/zhulik/generic-tools/batcher"
-	"github.com/zhulik/generic-tools/common"
 )
 
-func MustReceive[T any](r common.Receiver[T]) T {
+func MustReceive[T any](r gt.Receiver[T]) T {
 	v, ok := r.Receive()
 	if !ok {
 		panic("No ok!")

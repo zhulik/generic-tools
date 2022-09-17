@@ -3,16 +3,16 @@ package batcher
 import (
 	"time"
 
+	gt "github.com/zhulik/generic-tools"
 	"github.com/zhulik/generic-tools/ch"
-	"github.com/zhulik/generic-tools/common"
 )
 
 type Batcher[T any] interface {
-	common.Closer
-	common.Sender[T]
-	common.BatchSender[T]
-	common.Receiver[[]T]
-	common.Subscriber[[]T]
+	gt.Closer
+	gt.Sender[T]
+	gt.BatchSender[T]
+	gt.Receiver[[]T]
+	gt.Subscriber[[]T]
 }
 
 type batcher[T any] struct {

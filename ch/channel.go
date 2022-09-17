@@ -1,12 +1,14 @@
 package ch
 
-import "github.com/zhulik/generic-tools/common"
+import (
+	gt "github.com/zhulik/generic-tools"
+)
 
 type Chan[T any] interface {
-	common.Sender[T]
-	common.Closer
-	common.Receiver[T]
-	common.Subscriber[T]
+	gt.Sender[T]
+	gt.Closer
+	gt.Receiver[T]
+	gt.Subscriber[T]
 }
 
 type channel[T any] struct {

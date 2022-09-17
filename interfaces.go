@@ -1,4 +1,4 @@
-package common
+package genereictools
 
 type Closer interface {
 	Close()
