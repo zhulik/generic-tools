@@ -17,6 +17,7 @@ type Batcher[T any] interface {
 type batcher[T any] struct {
 	input   chan T
 	output  chan []T
+	stopped chan bool
 	buffer  []T
 	current int
 	timeout time.Duration
@@ -26,6 +27,7 @@ func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 	batcher := &batcher[T]{
 		input:   make(chan T),
 		output:  make(chan []T),
+		stopped: make(chan bool),
 		buffer:  make([]T, sendThreshold),
 		current: 0,
 		timeout: timeout,
@@ -38,7 +40,7 @@ func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 
 func (b *batcher[T]) Close() {
 	close(b.input)
-	// TODO: wait til run() is done
+	<-b.stopped
 	close(b.output)
 }
 
@@ -65,18 +67,33 @@ func (b *batcher[T]) run() {
 
 	for {
 		select {
-		case msg := <-b.input:
+		case msg, ok := <-b.input:
+			if !ok {
+				ticker.Stop()
+				b.flush()
+				b.stopped <- true
+				return
+			}
 			b.buffer[b.current] = msg
 			b.current++
 
-			if b.current == len(b.buffer)-1 {
-				/// TODO: send batch to receiver
-				b.current = 0
+			if b.current == len(b.buffer) {
+				b.flush()
+				ticker.Reset(b.timeout)
 			}
-			return
 		case <-ticker.C:
-			// TODO: send batch to receiver
+			b.flush()
 		}
 	}
-	// TODO: once input is closed send the remaining messages to the receiver and stop the ticker
+
+}
+
+func (b *batcher[T]) flush() { // TODO: make it public?
+	if b.current == 0 {
+		return
+	}
+	batch := make([]T, b.current)
+	copy(batch, b.buffer[0:b.current])
+	b.output <- batch
+	b.current = 0
 }
