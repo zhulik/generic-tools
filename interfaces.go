@@ -19,3 +19,18 @@ type Receiver[T any] interface {
 type Subscriber[T any] interface {
 	Subscribe() <-chan T
 }
+
+type Signaller interface {
+	Signal()
+}
+
+type Waiter interface {
+	Wait()
+}
+
+type Chan[T any] interface {
+	Sender[T]
+	Closer
+	Receiver[T]
+	Subscriber[T]
+}

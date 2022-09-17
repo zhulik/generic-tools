@@ -5,6 +5,7 @@ import (
 
 	gt "github.com/zhulik/generic-tools"
 	"github.com/zhulik/generic-tools/ch"
+	"github.com/zhulik/generic-tools/notification"
 )
 
 type Batcher[T any] interface {
@@ -16,9 +17,9 @@ type Batcher[T any] interface {
 }
 
 type batcher[T any] struct {
-	input   ch.Chan[T]
-	output  ch.Chan[[]T]
-	stopped chan bool
+	input   gt.Chan[T]
+	output  gt.Chan[[]T]
+	stopped notification.Notification
 	buffer  []T
 	current int
 	timeout time.Duration
@@ -28,7 +29,7 @@ func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 	batcher := &batcher[T]{
 		input:   ch.New[T](),
 		output:  ch.New[[]T](),
-		stopped: make(chan bool),
+		stopped: notification.New(),
 		buffer:  make([]T, sendThreshold),
 		current: 0,
 		timeout: timeout,
@@ -41,7 +42,7 @@ func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
 
 func (b *batcher[T]) Close() {
 	b.input.Close()
-	<-b.stopped
+	b.stopped.Wait()
 	b.output.Close()
 }
 
@@ -72,7 +73,7 @@ func (b *batcher[T]) run() {
 			if !ok {
 				ticker.Stop()
 				b.flush()
-				b.stopped <- true
+				b.stopped.Signal()
 				return
 			}
 			b.buffer[b.current] = msg

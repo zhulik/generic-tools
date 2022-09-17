@@ -4,30 +4,23 @@ import (
 	gt "github.com/zhulik/generic-tools"
 )
 
-type Chan[T any] interface {
-	gt.Sender[T]
-	gt.Closer
-	gt.Receiver[T]
-	gt.Subscriber[T]
-}
-
 type channel[T any] struct {
 	channel chan T
 }
 
-func New[T any]() Chan[T] {
+func New[T any]() gt.Chan[T] {
 	return &channel[T]{
 		channel: make(chan T),
 	}
 }
 
-func NewBuf[T any](size int) Chan[T] {
+func NewBuf[T any](size int) gt.Chan[T] {
 	return &channel[T]{
 		channel: make(chan T, size),
 	}
 }
 
-func From[T any](c chan T) Chan[T] {
+func From[T any](c chan T) gt.Chan[T] {
 	return &channel[T]{
 		channel: c,
 	}
