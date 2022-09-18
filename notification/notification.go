@@ -10,6 +10,7 @@ import (
 type Notification interface {
 	gt.Signaller
 	gt.Waiter
+	Done() bool
 }
 
 type notification struct {
@@ -36,5 +37,9 @@ func (n *notification) Wait() {
 	if n.done.Load() {
 		return
 	}
-	n.Wait()
+	n.wg.Wait()
+}
+
+func (n *notification) Done() bool {
+	return n.done.Load()
 }
