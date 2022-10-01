@@ -5,22 +5,21 @@ import (
 	"os"
 	"strings"
 
-	"github.com/k0kubun/pp/v3"
+	"github.com/k0kubun/pp"
 	"github.com/zhulik/generic-tools/multiplexer"
-	"github.com/zhulik/generic-tools/notification"
 )
 
 func main() {
 	m := multiplexer.New[string]()
 	defer m.Close()
 
-	// for i := 0; i < 5; i++ {
-	// 	go func(id int) {
-	// 		for msg := range m.Subscribe() {
-	// 			pp.Println("Receiver:", id, " msg: ", msg)
-	// 		}
-	// 	}(i)
-	// }
+	for i := 0; i < 5; i++ {
+		go func(id int) {
+			for msg := range m.Subscribe() {
+				pp.Println("Receiver:", id, "msg:", msg)
+			}
+		}(i)
+	}
 
 	var reader = bufio.NewReader(os.Stdin)
 	for {
@@ -33,18 +32,6 @@ func main() {
 			break
 		}
 
-		done := notification.New()
-
-		go func() {
-			pp.Println("Before receive")
-			msg, ok := m.Receive()
-			if !ok {
-				panic("Not ok!")
-			}
-			pp.Println("Temporary receiver:", msg)
-		}()
-
 		m.Send(msg)
-		done.Wait()
 	}
 }

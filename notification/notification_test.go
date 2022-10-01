@@ -14,7 +14,7 @@ func TestNotification(t *testing.T) {
 	go func() {
 		start := time.Now()
 		n.Wait()
-		assert.GreaterOrEqual(t, 1*time.Second, time.Now().Sub(start))
+		assert.GreaterOrEqual(t, 1*time.Second, time.Since(start))
 	}()
 
 	time.Sleep(1 * time.Second)

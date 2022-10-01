@@ -30,11 +30,6 @@ func (c *channel[T]) Close() {
 	close(c.channel)
 }
 
-func (c *channel[T]) Receive() (T, bool) {
-	res, ok := <-c.channel
-	return res, ok
-}
-
 func (c *channel[T]) Send(msg T) {
 	c.channel <- msg
 }

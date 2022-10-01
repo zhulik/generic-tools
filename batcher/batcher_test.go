@@ -10,8 +10,8 @@ import (
 	"github.com/zhulik/generic-tools/notification"
 )
 
-func MustReceive[T any](r gt.Receiver[T]) T {
-	v, ok := r.Receive()
+func MustReceive[T any](r gt.Subscriber[T]) T {
+	v, ok := <-r.Subscribe()
 	if !ok {
 		panic("Not ok!")
 	}

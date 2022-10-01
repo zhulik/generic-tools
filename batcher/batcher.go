@@ -11,7 +11,7 @@ import (
 type Batcher[T any] interface {
 	gt.Closer
 	gt.Sender[T]
-	gt.Receiver[[]T]
+	gt.Subscriber[[]T]
 }
 
 type batcher[T any] struct {
@@ -40,10 +40,6 @@ func (b *batcher[T]) Close() {
 	b.input.Close()
 	b.stopped.Wait()
 	b.output.Close()
-}
-
-func (b *batcher[T]) Receive() ([]T, bool) {
-	return b.output.Receive()
 }
 
 func (b *batcher[T]) Subscribe() <-chan []T {

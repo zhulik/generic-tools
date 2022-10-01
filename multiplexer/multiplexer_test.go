@@ -18,7 +18,7 @@ func TestMultiplexer(t *testing.T) {
 		done := notification.New()
 
 		go func() {
-			res, ok := m.Receive()
+			res, ok := <-m.Subscribe()
 			assert.True(t, ok)
 
 			assert.Equal(t, 1, res)

@@ -9,8 +9,7 @@ type Sender[T any] interface {
 	SendBatch([]T)
 }
 
-type Receiver[T any] interface {
-	Receive() (T, bool)
+type Subscriber[T any] interface {
 	Subscribe() <-chan T
 }
 
@@ -25,5 +24,5 @@ type Waiter interface {
 type Chan[T any] interface {
 	Sender[T]
 	Closer
-	Receiver[T]
+	Subscriber[T]
 }

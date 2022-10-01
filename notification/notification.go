@@ -14,7 +14,7 @@ type Notification interface {
 }
 
 type notification struct {
-	wg   sync.WaitGroup
+	wg   *sync.WaitGroup
 	done atomic.Bool
 }
 
@@ -22,7 +22,7 @@ func New() Notification {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	return &notification{
-		wg:   wg,
+		wg:   &wg,
 		done: atomic.Bool{},
 	}
 }
