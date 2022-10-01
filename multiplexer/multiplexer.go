@@ -33,15 +33,13 @@ func New[T any]() gt.Chan[T] {
 }
 
 func (m *multiplexer[T]) Close() {
-	if m.closed.Load() {
-		return
-	}
-	m.closed.Store(true)
-	m.input.Close()
-	m.stopped.Wait()
-	// No need to lock the mutex here since nobody else has access to subscribers at this point
-	for _, s := range m.subscribers {
-		s.Close()
+	if !m.closed.Swap(true) {
+		m.input.Close()
+		m.stopped.Wait()
+		// No need to lock the mutex here since nobody else has access to subscribers at this point
+		for _, s := range m.subscribers {
+			s.Close()
+		}
 	}
 }
 
