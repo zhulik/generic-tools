@@ -17,22 +17,20 @@ type Batcher[T any] interface {
 }
 
 type batcher[T any] struct {
-	input   gt.Chan[T]
-	output  gt.Chan[[]T]
-	stopped notification.Notification
-	buffer  []T
-	current int
-	timeout time.Duration
+	input      gt.Chan[T]
+	output     gt.Chan[[]T]
+	stopped    notification.Notification
+	bufferSize int
+	timeout    time.Duration
 }
 
-func New[T any](sendThreshold int, timeout time.Duration) Batcher[T] {
+func New[T any](bufferSize int, timeout time.Duration) Batcher[T] {
 	batcher := &batcher[T]{
-		input:   ch.New[T](),
-		output:  ch.New[[]T](),
-		stopped: notification.New(),
-		buffer:  make([]T, sendThreshold),
-		current: 0,
-		timeout: timeout,
+		input:      ch.New[T](),
+		output:     ch.New[[]T](),
+		stopped:    notification.New(),
+		bufferSize: bufferSize,
+		timeout:    timeout,
 	}
 
 	go batcher.run()
@@ -66,36 +64,38 @@ func (b *batcher[T]) SendBatch(msgs []T) {
 
 func (b *batcher[T]) run() {
 	ticker := time.NewTicker(b.timeout)
+	defer ticker.Stop()
+
+	buffer := make([]T, b.bufferSize)
+	current := 0
+
+	flush := func() {
+		if current == 0 {
+			return
+		}
+		batch := make([]T, current)
+		copy(batch, buffer[0:current])
+		b.output.Send(batch)
+		current = 0
+	}
 
 	for {
 		select {
 		case msg, ok := <-b.input.Subscribe():
 			if !ok {
-				ticker.Stop()
-				b.flush()
+				flush()
 				b.stopped.Signal()
 				return
 			}
-			b.buffer[b.current] = msg
-			b.current++
+			buffer[current] = msg
+			current++
 
-			if b.current == len(b.buffer) {
-				b.flush()
+			if current == len(buffer) {
+				flush()
 				ticker.Reset(b.timeout)
 			}
 		case <-ticker.C:
-			b.flush()
+			flush()
 		}
 	}
-
-}
-
-func (b *batcher[T]) flush() { // TODO: make it public?
-	if b.current == 0 {
-		return
-	}
-	batch := make([]T, b.current)
-	copy(batch, b.buffer[0:b.current])
-	b.output.Send(batch)
-	b.current = 0
 }
