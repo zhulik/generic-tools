@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/k0kubun/pp"
 	"github.com/samber/lo"
 	gt "github.com/zhulik/generic-tools"
 	"github.com/zhulik/generic-tools/ch"
@@ -51,21 +52,27 @@ func (m *multiplexer[T]) Close() {
 	}
 }
 
-func (m *multiplexer[T]) Receive() (T, bool) {
+func (m *multiplexer[T]) Receive() (res T, ok bool) {
 	if m.closed.Load() {
 		panic("Cannot receiver from a closed multiplexer")
 	}
-	m.m.Lock()
 
 	c := ch.New[T]()
-	s := subscriber[T]{
-		ch:   c,
-		once: true,
-	}
-	m.subscribers = append(m.subscribers, s)
-	m.m.Unlock()
-	res, ok := <-c.Subscribe()
-	return res, ok
+
+	go func() {
+		m.m.Lock()
+		s := subscriber[T]{
+			ch:   c,
+			once: true,
+		}
+		m.subscribers = append(m.subscribers, s)
+		m.m.Unlock()
+	}()
+
+	// pp.Println("Before receive")
+	res, ok = c.Receive()
+
+	return
 }
 
 func (m *multiplexer[T]) Send(msg T) {
@@ -107,6 +114,7 @@ func (m *multiplexer[T]) run() {
 		})
 
 		m.m.Unlock()
+		pp.Println("Delivered")
 		msg.delivered.Signal()
 	}
 	m.stopped.Signal()
