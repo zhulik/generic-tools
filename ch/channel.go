@@ -39,6 +39,12 @@ func (c *channel[T]) Send(msg T) {
 	c.channel <- msg
 }
 
+func (c *channel[T]) SendBatch(msgs []T) {
+	for _, msg := range msgs {
+		c.Send(msg)
+	}
+}
+
 func (c *channel[T]) Subscribe() <-chan T {
 	return c.channel
 }

@@ -4,7 +4,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/k0kubun/pp"
 	"github.com/samber/lo"
 	gt "github.com/zhulik/generic-tools"
 	"github.com/zhulik/generic-tools/ch"
@@ -12,8 +11,7 @@ import (
 )
 
 type message[T any] struct {
-	payload   T
-	delivered notification.Notification
+	payload T
 }
 
 type subscriber[T any] struct {
@@ -43,8 +41,11 @@ func New[T any]() gt.Chan[T] {
 }
 
 func (m *multiplexer[T]) Close() {
-	m.input.Close()
+	if m.closed.Load() {
+		return
+	}
 	m.closed.Store(true)
+	m.input.Close()
 	m.stopped.Wait()
 	// No need to lock the mutex here since nobody else has access to subscribers at this point
 	for _, s := range m.subscribers {
@@ -77,11 +78,16 @@ func (m *multiplexer[T]) Receive() (res T, ok bool) {
 
 func (m *multiplexer[T]) Send(msg T) {
 	mm := message[T]{
-		payload:   msg,
-		delivered: notification.New(),
+		payload: msg,
 	}
+	// TODO: wait for subscribers
 	m.input.Send(mm)
-	mm.delivered.Wait()
+}
+
+func (m *multiplexer[T]) SendBatch(msgs []T) {
+	for _, msg := range msgs {
+		m.Send(msg)
+	}
 }
 
 func (m *multiplexer[T]) Subscribe() <-chan T {
@@ -114,8 +120,6 @@ func (m *multiplexer[T]) run() {
 		})
 
 		m.m.Unlock()
-		pp.Println("Delivered")
-		msg.delivered.Signal()
 	}
 	m.stopped.Signal()
 }

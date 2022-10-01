@@ -11,9 +11,7 @@ import (
 type Batcher[T any] interface {
 	gt.Closer
 	gt.Sender[T]
-	gt.BatchSender[T]
 	gt.Receiver[[]T]
-	gt.Subscriber[[]T]
 }
 
 type batcher[T any] struct {
