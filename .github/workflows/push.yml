@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.ruby }}
+          go-version: ${{ matrix.golang }}
 
       - name: Run tests
         run: go test ./... -race
